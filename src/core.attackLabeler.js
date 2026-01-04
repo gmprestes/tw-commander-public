@@ -362,18 +362,20 @@
 
       const url = gameUrl(`village=${villageId}&screen=overview_villages&mode=incomings&action=process&type=all&subtype=attacks`);
 
-      const fd = new URLSearchParams();
-      fd.set("h", csrf);
-      ids.forEach(id => fd.set(`id_${id}`, "on"));
+      const form = new FormData();
+      form.append("label", CONFIG.labelName);
+      form.append("h", csrf);
+      ids.forEach(id => {
+        form.append(`id_${id}`, "on");
+      });
+      console.log(fd.toString());
 
       pushLog(`POST etiqueta ids=${ids.length}`, "info");
 
       const res = await fetch(url, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-        body: fd.toString(),
-        cache: "no-store"
+        body: form
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status} no POST de etiqueta.`);
