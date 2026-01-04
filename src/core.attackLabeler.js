@@ -363,7 +363,7 @@
       const url = gameUrl(`village=${villageId}&screen=overview_villages&mode=incomings&action=process&type=all&subtype=attacks`);
 
       const form = new FormData();
-      form.append("label", CONFIG.labelName);
+      form.append("label", "Etiqueta");
       form.append("h", csrf);
       ids.forEach(id => {
         form.append(`id_${id}`, "on");
