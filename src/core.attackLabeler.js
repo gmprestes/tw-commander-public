@@ -561,7 +561,6 @@
 
       SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
     }
-    Í
 
     function restartLoopIfRunning() {
       const cfg = loadCfg();
