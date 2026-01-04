@@ -368,7 +368,7 @@
       ids.forEach(id => {
         form.append(`id_${id}`, "on");
       });
-      console.log(fd.toString());
+      //console.log(fd.toString());
 
       pushLog(`POST etiqueta ids=${ids.length}`, "info");
 
