@@ -85,11 +85,13 @@
     function becomeLeader() {
       isLeader = true;
       SIGE_SYNC.send("AL_LEADER", { leader: getTabId() });
+      SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
     }
 
     function becomeFollower() {
       isLeader = false;
       SIGE_SYNC.send("AL_FOLLOWER", { follower: getTabId() });
+      SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
     }
 
     function startSingletonHeartbeat() {
@@ -117,7 +119,8 @@
         } else {
           if (isLeader) becomeFollower();
           // se não conseguiu, garante que não executa
-          if (loopTimer) stopLoop(true);
+          //if (loopTimer) // ✅ sempre para timers locais primeiro (mas NÃO mexe em lock)
+          stopTimers();
         }
       }, SINGLETON_HEARTBEAT_MS);
     }
@@ -134,13 +137,15 @@
       const lock = readLock();
       const tabId = getTabId();
 
-      // perdi o lock: sou follower agora
-      if (isLeader && lock && lock.owner && lock.owner !== tabId) {
+      // perdi o lock: vire follower e pare timers, MAS continue heartbeat
+      if (isLeader && (!lock || (lock.owner && lock.owner !== tabId))) {
         becomeFollower();
-        stopLoop(true);
-        pushLog("Spectator: outra aba assumiu. Parando esta instância.", "info");
+        stopTimers(); // ✅ só para timers locais
+        pushLog("Spectator: outra aba assumiu. Fui para follower.", "info");
+        SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
       }
     });
+
 
     // ======================= UI helpers =======================
     function fmtCountdown(ms) {
@@ -557,7 +562,8 @@
 
       becomeFollower();
 
-      pushLog("Loop parado", "info");
+      if (!silent || wasLeader)
+        pushLog("Loop parado", "info");
 
       SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
     }

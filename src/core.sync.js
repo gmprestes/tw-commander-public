@@ -2,29 +2,29 @@
   "use strict";
 
   const SIGE_SYNC = (() => {
-    const CHANNEL = "SIGE_TW_COMMANDER_SYNC_v1";
-    const FALLBACK_KEY = "__SIGE_TW_COMMANDER_SYNC_FALLBACK__";
-    const bc = ("BroadcastChannel" in w) ? new BroadcastChannel(CHANNEL) : null;
+    const KEY = "SIGE_SYNC_EVT";
+    const subs = [];
 
     function send(type, payload = {}) {
-      const msg = { type, payload, ts: Date.now() };
-      if (bc) bc.postMessage(msg);
-      else localStorage.setItem(FALLBACK_KEY, JSON.stringify(msg));
+      const evt = { type, payload, at: Date.now(), id: Math.random().toString(16).slice(2) };
+      localStorage.setItem(KEY, JSON.stringify(evt));
+      // dispara também na aba atual
+      subs.forEach(fn => fn(evt));
     }
 
-    function on(handler) {
-      if (bc) {
-        bc.onmessage = (ev) => ev?.data && handler(ev.data);
-      } else {
-        w.addEventListener("storage", (e) => {
-          if (e.key !== FALLBACK_KEY || !e.newValue) return;
-          try { handler(JSON.parse(e.newValue)); } catch { }
-        });
-      }
-    }
+    function on(fn) { subs.push(fn); }
+
+    window.addEventListener("storage", (ev) => {
+      if (ev.key !== KEY) return;
+      try {
+        const evt = JSON.parse(ev.newValue || "null");
+        if (evt) subs.forEach(fn => fn(evt));
+      } catch { }
+    });
 
     return { send, on };
   })();
+
 
   w.SIGE_SYNC = SIGE_SYNC;
 })(unsafeWindow || window);

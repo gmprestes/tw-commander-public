@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TW Commander Loader
 // @namespace    TWCommander
-// @version      1.0.3
+// @version      1.0.4
 // @description  Loader modular do TW Commander via GitHub Raw
 // @author       gmprestes
 // @author       gmprestes
