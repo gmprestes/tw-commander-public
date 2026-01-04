@@ -491,21 +491,26 @@
       countdownTimer = null;
     }
 
+
     function startLoop() {
       const cfg = loadCfg();
       if (!cfg.moduleEnabled) return;
 
+      // ✅ sempre para timers locais primeiro (mas NÃO mexe em lock)
+      stopTimers();
+
       // ✅ tenta virar leader
       const ok = tryAcquireLock();
-      if (ok) becomeLeader();
-      else becomeFollower();
+
+      if (ok) {
+        becomeLeader();
+      } else {
+        becomeFollower();
+      }
 
       startSingletonHeartbeat();
 
-      // ✅ mesmo follower precisa parar loop local
-      stopLoop(true);
-
-      // follower não executa loop
+      // ✅ follower NÃO executa loop, só fica em spectator
       if (!isLeader) {
         SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
         return;
@@ -513,6 +518,7 @@
 
       pushLog("StartLoop: iniciando loop (leader)", "ok");
 
+      // roda agora
       runOnce({ silent: true }).catch(() => { });
 
       nextRunAt = now() + cfg.intervalMs;
@@ -530,11 +536,21 @@
       SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
     }
 
-    function stopLoop(silent = false) {
+
+    function stopTimers() {
       if (loopTimer) clearInterval(loopTimer);
       loopTimer = null;
+
       nextRunAt = null;
       stopCountdown();
+
+      running = false;
+    }
+
+
+    function stopLoop(silent = false) {
+      // ✅ para tudo local primeiro
+      stopTimers();
 
       stopSingletonHeartbeat();
       releaseLock();
@@ -543,15 +559,9 @@
 
       pushLog("Loop parado", "info");
 
-      // ✅ Pedido seu: sem mensagens ON/OFF para usuário
-      // Só errors são exibidos
-
-      if (!silent) {
-        // não mostrar nada
-      }
-
       SIGE_SYNC.send("AL_STATUS_UPDATED", { status: getStatus() });
     }
+    Í
 
     function restartLoopIfRunning() {
       const cfg = loadCfg();
